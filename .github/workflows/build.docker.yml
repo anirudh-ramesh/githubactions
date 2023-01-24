@@ -41,10 +41,10 @@ jobs:
     - name: Get timezone
       run: |
         cat .env.main.template | grep "TZ" >> $GITHUB_ENV
-    - name: Get Alpine version
+    - name: Get dependent Docker images' versions
       run: |
-        cat .versions/Dockerfile | grep "ARG ALPINE_VERSION" | sed -e 's/ARG //g' >> $GITHUB_ENV
-    - name: Build and push docker image
+        cat .versions/Dockerfile | grep "ARG " | sed -e '/^ARG /!d' -e 's/ARG //g' >> $GITHUB_ENV
+    - name: Build and push Docker image
       uses: docker/build-push-action@v3
       with:
         context: ./vivian-0
