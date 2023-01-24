@@ -28,9 +28,9 @@ jobs:
       matrix:
         include:
           - dockerfile: s3cmd
-            image: anirudhramesh/s3cmd
+            image: irasus/s3cmd
           - dockerfile: vivian-0
-            image: anirudhramesh/vivian-0
+            image: irasus/vivian-0
     permissions:
       contents: read
       packages: write
