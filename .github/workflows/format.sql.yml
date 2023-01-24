@@ -1,0 +1,23 @@
+name: Format SQL queries
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+permissions:
+  contents: write
+jobs:
+  format:
+    name: run / format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v3
+      - name: Install zetasql
+        run: |
+          wget https://github.com/Matts966/zetasql-formatter/releases/download/v1.6.5/zetasql-formatter_linux_x86_64.zip
+          sudo unzip zetasql-formatter_linux_x86_64.zip -d /usr/local/bin
+          rm zetasql-formatter_linux_x86_64.zip
+      - name: format
+        uses: yoheikikuta/sql-autoformat-action@v1.0.2
