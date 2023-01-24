@@ -1,0 +1,76 @@
+name: Build Docker images for Dockerhub
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v3
+      - name: Run tests
+        run: |
+          if [ -f docker-compose.test.yml ]; then
+            # docker-compose --file docker-compose.test.yml build
+            echo "0"
+          else
+            echo "1"
+          fi
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: s3cmd
+            image: anirudhramesh/s3cmd
+          - dockerfile: vivian-0
+            image: anirudhramesh/vivian-0
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v3
+
+      # - name: Docker Metadata action
+      #   id: meta
+      #   uses: docker/metadata-action@v4.3.0
+      #   with:
+      #     images: ${{ matrix.image }}                
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Set Docker Image's tag
+        run: |
+          echo "tag=`date +%y.%m.%d`" >> $GITHUB_ENV
+      - name: Get timezone
+        run: |
+          cat .env.main.template | grep "TZ" >> $GITHUB_ENV
+      - name: Get dependent Docker images' versions
+        run: |
+          cat .versions/Dockerfile | grep "ARG " | sed -e '/^ARG /!d' -e 's/ARG //g' >> $GITHUB_ENV
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v3.3.0
+        with:
+          context: ./${{ matrix.dockerfile }}
+          file: ./${{ matrix.dockerfile }}/Dockerfile
+          platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+          push: true
+          build-args: |
+            ALPINE_VERSION=${{ env.ALPINE_VERSION }}
+            TZ=${{ env.TZ }}
+          tags: |
+            ${{ matrix.image }}:latest , ${{ matrix.image }}:${{ env.tag }}
+          # tags: ${{ steps.meta.outputs.tags }}
+          # labels: ${{ steps.meta.outputs.labels }}
